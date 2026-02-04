@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
+import CopyrightFooter from './components/CopyrightFooter';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Stock from './pages/Stock';
@@ -59,6 +60,7 @@ const AppLayout = () => {
             <Route path="/users" element={user.role === 'admin' ? <Users /> : <Navigate to="/" />} />
           </Routes>
         </main>
+        <CopyrightFooter />
       </div>
     </div>
   );
