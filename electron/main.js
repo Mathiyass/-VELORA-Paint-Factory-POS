@@ -215,3 +215,7 @@ handleIpc('db:delete-expense', (_, id) => db.deleteExpense(id));
 handleIpc('db:get-employees', () => db.getEmployees());
 handleIpc('db:add-employee', (_, d) => db.addEmployee(d));
 handleIpc('db:delete-employee', (_, id) => db.deleteEmployee(id));
+
+// --- Smart Insights & Automation Handlers ---
+handleIpc('db:get-smart-insights', () => db.getSmartInsights());
+handleIpc('db:get-auto-production-plan', () => db.getAutoProductionPlan());

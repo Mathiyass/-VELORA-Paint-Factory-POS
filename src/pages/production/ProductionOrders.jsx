@@ -54,6 +54,28 @@ export default function ProductionOrders() {
         }
     };
 
+    const handleAutoPlan = async () => {
+        if (!window.api) return;
+        const suggestions = await window.api.getAutoProductionPlan();
+        if (suggestions.length === 0) {
+            alert('Stock levels are healthy. No auto-plans needed.');
+            return;
+        }
+
+        if (confirm(`Found ${suggestions.length} low stock items (e.g., ${suggestions[0].product_name}). Create production orders for them?`)) {
+            let count = 0;
+            for (const s of suggestions) {
+                await window.api.createProductionOrder({
+                    formula_id: s.formula_id,
+                    quantity_planned: s.quantity_planned
+                });
+                count++;
+            }
+            alert(`Created ${count} production orders.`);
+            fetchOrders();
+        }
+    };
+
     return (
         <div className="h-full bg-[var(--color-bg-app)] text-[var(--color-text-primary)] p-8 overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-8">
@@ -64,12 +86,20 @@ export default function ProductionOrders() {
                     </h1>
                     <p className="text-[var(--color-text-secondary)] mt-1">Manage manufacturing runs and batch execution</p>
                 </div>
-                <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-cyan-600 hover:bg-cyan-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] font-bold"
-                >
-                    <Plus size={18} /> Plan Production
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleAutoPlan}
+                        className="bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border border-cyan-500/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-all font-bold"
+                    >
+                        <Activity size={18} /> Auto-Plan
+                    </button>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="bg-cyan-600 hover:bg-cyan-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] font-bold"
+                    >
+                        <Plus size={18} /> Plan Production
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
