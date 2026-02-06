@@ -107,6 +107,7 @@ handleIpc('db:get-sales-by-hour', () => db.getSalesByHour());
 handleIpc('db:get-products', () => db.getProducts());
 handleIpc('db:add-product', (_, data) => db.addProduct(data));
 handleIpc('db:update-product', (_, data) => db.updateProduct(data));
+handleIpc('db:adjust-stock', (_, data) => db.adjustStock(data.productId, data.change, data.reason, data.userId));
 handleIpc('db:delete-product', (_, id) => db.deleteProduct(id));
 handleIpc('db:import-products-csv', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -215,3 +216,7 @@ handleIpc('db:delete-expense', (_, id) => db.deleteExpense(id));
 handleIpc('db:get-employees', () => db.getEmployees());
 handleIpc('db:add-employee', (_, d) => db.addEmployee(d));
 handleIpc('db:delete-employee', (_, id) => db.deleteEmployee(id));
+
+// --- Smart Insights & Automation Handlers ---
+handleIpc('db:get-smart-insights', () => db.getSmartInsights());
+handleIpc('db:get-auto-production-plan', () => db.getAutoProductionPlan());

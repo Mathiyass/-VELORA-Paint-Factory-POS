@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Search, Trash2, Save, X, Image as ImageIcon, Edit, AlertTriangle, Download, UploadCloud, Link as LinkIcon, FlaskConical } from 'lucide-react';
+import { Package, Plus, Search, Trash2, Save, X, Image as ImageIcon, Edit, AlertTriangle, Download, UploadCloud, Link as LinkIcon, FlaskConical, ClipboardList } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useToast } from '../context/ToastContext';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Stock() {
   const { success, error } = useToast();
   const location = useLocation();
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [formulas, setFormulas] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,6 +16,10 @@ export default function Stock() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [filterLowStock, setFilterLowStock] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Stock Adjustment
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [adjustData, setAdjustData] = useState({ id: null, name: '', current_stock: 0, change: '', reason: 'Inventory Count' });
 
   const initialFormState = {
     id: null, name: '', sku: '', category: 'General',
@@ -103,6 +109,37 @@ export default function Stock() {
       success("Product deleted");
     } catch {
       error("Failed to delete product");
+    }
+  };
+
+  const openAdjustModal = (product) => {
+    setAdjustData({
+      id: product.id,
+      name: product.name,
+      current_stock: product.stock,
+      change: '',
+      reason: 'Inventory Count'
+    });
+    setIsAdjustModalOpen(true);
+  };
+
+  const handleAdjustSubmit = async (e) => {
+    e.preventDefault();
+    const change = parseInt(adjustData.change);
+    if (isNaN(change) || change === 0) return error("Invalid adjustment quantity");
+
+    try {
+      await window.api.adjustStock({
+        productId: adjustData.id,
+        change: change,
+        reason: adjustData.reason,
+        userId: user?.id
+      });
+      success("Stock adjusted successfully");
+      setIsAdjustModalOpen(false);
+      loadData();
+    } catch (err) {
+      error("Adjustment failed: " + err.message);
     }
   };
 
@@ -207,6 +244,7 @@ export default function Stock() {
                 </div>
 
                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                  <button onClick={() => openAdjustModal(p)} className="p-2 bg-zinc-800 hover:bg-indigo-900 text-white rounded-lg shadow-lg border border-zinc-700 hover:border-indigo-500 transition-colors" title="Adjust Stock"><ClipboardList size={14} /></button>
                   <button onClick={() => openEditModal(p)} className="p-2 bg-zinc-800 hover:bg-cyan-900 text-white rounded-lg shadow-lg border border-zinc-700 hover:border-cyan-500 transition-colors"><Edit size={14} /></button>
                   <button onClick={() => handleDelete(p.id)} className="p-2 bg-zinc-800 hover:bg-red-900 text-white rounded-lg shadow-lg border border-zinc-700 hover:border-red-500 transition-colors"><Trash2 size={14} /></button>
                 </div>
@@ -215,6 +253,60 @@ export default function Stock() {
           })}
         </div>
       </div>
+
+      {isAdjustModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl shadow-indigo-900/20">
+            <div className="p-6 border-b border-zinc-800 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">Adjust Stock</h2>
+              <button onClick={() => setIsAdjustModalOpen(false)}><X className="text-zinc-500 hover:text-white" /></button>
+            </div>
+            <form onSubmit={handleAdjustSubmit} className="p-6 space-y-4">
+              <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 mb-4">
+                 <div className="text-xs text-zinc-500 uppercase">Product</div>
+                 <div className="font-bold text-lg text-white">{adjustData.name}</div>
+                 <div className="text-sm text-zinc-400">Current Stock: <span className="text-cyan-400 font-bold">{adjustData.current_stock}</span></div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Adjustment (+/-)</label>
+                <input
+                  autoFocus
+                  type="number"
+                  required
+                  placeholder="-5 or 10"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-indigo-500 outline-none text-lg font-bold"
+                  value={adjustData.change}
+                  onChange={e => setAdjustData({ ...adjustData, change: e.target.value })}
+                />
+                <p className="text-xs text-zinc-500 mt-1">Enter negative value to reduce stock (e.g., -5)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Reason</label>
+                <select
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-indigo-500 outline-none"
+                  value={adjustData.reason}
+                  onChange={e => setAdjustData({ ...adjustData, reason: e.target.value })}
+                >
+                  <option>Inventory Count</option>
+                  <option>Damaged / Wastage</option>
+                  <option>Theft / Loss</option>
+                  <option>Return</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setIsAdjustModalOpen(false)} className="px-4 py-2 text-zinc-400 hover:text-white">Cancel</button>
+                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-indigo-900/20">
+                  Update Stock
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
