@@ -3,6 +3,7 @@ import path from 'path';
 import { app } from 'electron';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -816,11 +817,83 @@ export function deleteChemical(id) {
 }
 
 export function importProductsFromCSV(filePath) {
-  // Placeholder for CSV import logic
-  // const fs = require('fs');
-  // const csv = fs.readFileSync(filePath, 'utf-8');
-  // Parse and insert...
-  return { success: true, message: "Import feature coming soon" };
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+    if (lines.length < 2) return { success: false, message: "Empty or invalid CSV" };
+
+    // Simple CSV parser (doesn't handle commas in quotes)
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+
+    // Map headers to indices
+    const idx = {
+      name: headers.indexOf('name'),
+      sku: headers.indexOf('sku'),
+      category: headers.indexOf('category'),
+      price_sell: headers.indexOf('price_sell'),
+      stock: headers.indexOf('stock'),
+      price_buy: headers.indexOf('price_buy')
+    };
+
+    if (idx.name === -1 || idx.price_sell === -1) {
+      return { success: false, message: "CSV must contain 'name' and 'price_sell' columns" };
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    const insertStmt = db.prepare(`
+      INSERT INTO products (name, sku, category, price_sell, stock, price_buy)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const updateStmt = db.prepare(`
+      UPDATE products SET name = ?, category = ?, price_sell = ?, stock = ?, price_buy = ? WHERE sku = ?
+    `);
+
+    const checkSku = db.prepare('SELECT id FROM products WHERE sku = ?');
+
+    const tx = db.transaction(() => {
+      for (let i = 1; i < lines.length; i++) {
+        // Handle simple CSV splitting
+        const row = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+
+        const name = row[idx.name];
+        let sku = idx.sku > -1 ? row[idx.sku] : '';
+        if (!sku) sku = `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const category = idx.category > -1 ? row[idx.category] : 'General';
+        const price_sell = parseFloat(row[idx.price_sell]) || 0;
+        const stock = idx.stock > -1 ? (parseInt(row[idx.stock]) || 0) : 0;
+        const price_buy = idx.price_buy > -1 ? (parseFloat(row[idx.price_buy]) || 0) : 0;
+
+        if (!name) {
+          failCount++;
+          continue;
+        }
+
+        try {
+          const existing = checkSku.get(sku);
+          if (existing) {
+            updateStmt.run(name, category, price_sell, stock, price_buy, sku);
+          } else {
+            insertStmt.run(name, sku, category, price_sell, stock, price_buy);
+          }
+          successCount++;
+        } catch (e) {
+          console.error(`Row ${i} failed:`, e);
+          failCount++;
+        }
+      }
+    });
+
+    tx();
+    return { success: true, message: `Imported ${successCount} products. Failed: ${failCount}` };
+
+  } catch (e) {
+    console.error("CSV Import Error:", e);
+    return { success: false, message: e.message };
+  }
 }
 
 // --- Smart Insights & Automation ---

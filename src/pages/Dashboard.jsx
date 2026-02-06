@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, TrendingUp, Activity, Factory, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Activity, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { StatCard } from '../components/ui/StatCard';
