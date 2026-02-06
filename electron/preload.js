@@ -39,12 +39,6 @@ contextBridge.exposeInMainWorld('api', {
   addCustomer: (data) => ipcRenderer.invoke('db:add-customer', data),
   deleteCustomer: (id) => ipcRenderer.invoke('db:delete-customer', id),
 
-  // Repairs
-  getRepairs: () => ipcRenderer.invoke('db:get-repairs'),
-  addRepair: (data) => ipcRenderer.invoke('db:add-repair', data),
-  updateRepairStatus: (id, status) => ipcRenderer.invoke('db:update-repair-status', { id, status }),
-  deleteRepair: (id) => ipcRenderer.invoke('db:delete-repair', id),
-
   // Settings & System
   getSettings: () => ipcRenderer.invoke('app:get-settings'),
   updateSettings: (settings) => ipcRenderer.invoke('app:update-settings', settings),
@@ -55,10 +49,13 @@ contextBridge.exposeInMainWorld('api', {
   // --- Factory ---
   getSuppliers: () => ipcRenderer.invoke('db:get-suppliers'),
   addSupplier: (data) => ipcRenderer.invoke('db:add-supplier', data),
+  updateSupplier: (data) => ipcRenderer.invoke('db:update-supplier', data),
   deleteSupplier: (id) => ipcRenderer.invoke('db:delete-supplier', id),
 
   getChemicals: () => ipcRenderer.invoke('db:get-chemicals'),
   addChemical: (data) => ipcRenderer.invoke('db:add-chemical', data),
+  updateChemical: (data) => ipcRenderer.invoke('db:update-chemical', data),
+  deleteChemical: (id) => ipcRenderer.invoke('db:delete-chemical', id),
   getBatches: (chemId) => ipcRenderer.invoke('db:get-batches', chemId),
 
   getPurchaseOrders: () => ipcRenderer.invoke('db:get-pos'),
