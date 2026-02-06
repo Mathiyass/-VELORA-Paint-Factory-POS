@@ -9,6 +9,8 @@ export default function Chemicals() {
     const [showBatchModal, setShowBatchModal] = useState(false);
     const [formData, setFormData] = useState({ name: '', sku: '', unit: 'kg', reorder_level: 10 });
     const [searchTerm, setSearchTerm] = useState('');
+    const [editMode, setEditMode] = useState(false);
+    const [editId, setEditId] = useState(null);
 
     const fetchChemicals = async () => {
         if (window.api) {
@@ -33,10 +35,37 @@ export default function Chemicals() {
     const handleAddSubmit = async (e) => {
         e.preventDefault();
         if (window.api) {
-            await window.api.addChemical(formData);
+            if (editMode && editId) {
+                await window.api.updateChemical({ ...formData, id: editId });
+            } else {
+                await window.api.addChemical(formData);
+            }
             setShowAddModal(false);
             setFormData({ name: '', sku: '', unit: 'kg', reorder_level: 10 });
+            setEditMode(false);
+            setEditId(null);
             fetchChemicals();
+        }
+    };
+
+    const handleEdit = (chem) => {
+        setFormData({
+            name: chem.name,
+            sku: chem.sku,
+            unit: chem.unit,
+            reorder_level: chem.reorder_level
+        });
+        setEditId(chem.id);
+        setEditMode(true);
+        setShowAddModal(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (confirm('Are you sure you want to delete this chemical?')) {
+            if (window.api) {
+                await window.api.deleteChemical(id);
+                fetchChemicals();
+            }
         }
     };
 
@@ -62,7 +91,12 @@ export default function Chemicals() {
                     <p className="text-zinc-500 mt-1">Raw material stock levels and reorder management</p>
                 </div>
                 <button
-                    onClick={() => setShowAddModal(true)}
+                    onClick={() => {
+                        setEditMode(false);
+                        setEditId(null);
+                        setFormData({ name: '', sku: '', unit: 'kg', reorder_level: 10 });
+                        setShowAddModal(true);
+                    }}
                     className="bg-cyan-600 hover:bg-cyan-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] font-bold"
                 >
                     <Plus size={18} /> Add Chemical
@@ -94,8 +128,13 @@ export default function Chemicals() {
                                     <h3 className="text-lg font-bold text-zinc-100 truncate pr-2">{chem.name}</h3>
                                     <span className="text-xs font-mono text-zinc-500 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">{chem.sku || 'NO-SKU'}</span>
                                 </div>
-                                <div className={`p-2 rounded-lg ${isLowStock ? 'bg-red-500/20 text-red-500' : 'bg-cyan-500/10 text-cyan-400'}`}>
-                                    {isLowStock ? <AlertTriangle size={20} /> : <FlaskConical size={20} />}
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleEdit(chem)} className="p-2 text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800 rounded-lg transition-colors">
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button onClick={() => handleDelete(chem.id)} className="p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-colors">
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             </div>
 
@@ -130,7 +169,7 @@ export default function Chemicals() {
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl shadow-cyan-900/20">
                         <div className="p-6 border-b border-zinc-800">
-                            <h2 className="text-xl font-bold text-white">Add New Chemical</h2>
+                                <h2 className="text-xl font-bold text-white">{editMode ? 'Edit Chemical' : 'Add New Chemical'}</h2>
                         </div>
                         <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
                             <div>
@@ -189,7 +228,7 @@ export default function Chemicals() {
                                     type="submit"
                                     className="bg-cyan-600 hover:bg-cyan-500 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-cyan-900/20"
                                 >
-                                    Add Chemical
+                                        {editMode ? 'Save Changes' : 'Add Chemical'}
                                 </button>
                             </div>
                         </form>

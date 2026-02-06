@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "main": "electron/main.js",
-  "description": "Velora Paint Factory POS System",
+  "description": "Velora Paint Factory & Shop POS Management System",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -53,8 +53,8 @@
     "wait-on": "^9.0.3"
   },
   "build": {
-    "appId": "com.gamersedge.pos",
-    "productName": "GamersEdge Enhanced",
+    "appId": "com.velora.paintfactory",
+    "productName": "Velora Paint Factory",
     "files": [
       "dist/**/*",
       "electron/**/*"

@@ -87,7 +87,7 @@ export default function Sidebar() {
           <Factory className="text-black w-6 h-6" />
         </div>
         <div className="ml-3 relative z-10">
-          <h1 className="font-bold text-lg text-white tracking-wide leading-none">VELORA<span className="block text-[10px] text-cyan-400 font-extrabold tracking-[0.2em] uppercase mt-0.5">NEON POS</span></h1>
+          <h1 className="font-bold text-lg text-white tracking-wide leading-none">VELORA<span className="block text-[10px] text-cyan-400 font-extrabold tracking-[0.2em] uppercase mt-0.5">PAINT FACTORY</span></h1>
         </div>
       </div>
 
