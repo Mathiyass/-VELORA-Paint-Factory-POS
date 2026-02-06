@@ -317,7 +317,15 @@ export function getSuppliers() { return db.prepare('SELECT * FROM suppliers ORDE
 export function addSupplier(s) { return db.prepare('INSERT INTO suppliers (name, contact_person, email, address, phone) VALUES (?, ?, ?, ?, ?)').run(s.name, s.contact, s.email, s.address, s.phone); }
 export function deleteSupplier(id) { return db.prepare('DELETE FROM suppliers WHERE id=?').run(id); }
 
-export function getChemicals() { return db.prepare('SELECT * FROM chemicals ORDER BY name ASC').all(); }
+export function getChemicals() {
+  return db.prepare(`
+    SELECT c.*,
+    (SELECT IFNULL(SUM(b.quantity_remaining * b.cost_per_unit) / NULLIF(SUM(b.quantity_remaining), 0), 0)
+     FROM chemical_batches b WHERE b.chemical_id = c.id AND b.quantity_remaining > 0) as avg_cost
+    FROM chemicals c
+    ORDER BY c.name ASC
+  `).all();
+}
 export function addChemical(c) { return db.prepare('INSERT INTO chemicals (name, sku, unit, reorder_level, current_stock) VALUES (?, ?, ?, ?, 0)').run(c.name, c.sku, c.unit, c.reorder_level); }
 
 // --- Advanced Inventory (Batches) ---
@@ -813,6 +821,70 @@ export function importProductsFromCSV(filePath) {
   // const csv = fs.readFileSync(filePath, 'utf-8');
   // Parse and insert...
   return { success: true, message: "Import feature coming soon" };
+}
+
+// --- Smart Insights & Automation ---
+export function getSmartInsights() {
+  const today = new Date().toISOString().split('T')[0];
+  const last7Days = new Date();
+  last7Days.setDate(last7Days.getDate() - 7);
+  const sevenDaysAgo = last7Days.toISOString().split('T')[0];
+
+  // 1. Trending Products (Top 3 by Quantity in last 7 days)
+  const trending = db.prepare(`
+    SELECT p.name, SUM(ti.quantity) as qty
+    FROM transaction_items ti
+    JOIN transactions t ON ti.transaction_id = t.id
+    JOIN products p ON ti.product_id = p.id
+    WHERE t.timestamp >= ?
+    GROUP BY p.name
+    ORDER BY qty DESC
+    LIMIT 3
+  `).all(sevenDaysAgo);
+
+  // 2. Low Stock Alerts
+  const lowStock = db.prepare(`
+    SELECT name, current_stock as stock, reorder_level as threshold, 'Chemical' as type FROM chemicals WHERE current_stock <= reorder_level
+    UNION ALL
+    SELECT name, stock, 5 as threshold, 'Product' as type FROM products WHERE stock <= 5
+  `).all();
+
+  // 3. Sales Spike (Today vs Avg of last 7 days)
+  const todaySales = db.prepare("SELECT SUM(total_amount) as total FROM transactions WHERE timestamp LIKE ?").get(`${today}%`)?.total || 0;
+  const last7DaysSales = db.prepare("SELECT SUM(total_amount) as total FROM transactions WHERE timestamp >= ? AND timestamp < ?").get(sevenDaysAgo, today)?.total || 0;
+  const avgDaily = last7DaysSales / 7;
+
+  return {
+    trending,
+    lowStock,
+    performance: {
+      today: todaySales,
+      avgDaily: avgDaily || 1, // avoid division by zero
+      status: todaySales > avgDaily ? 'Trending Up' : 'Trending Down'
+    }
+  };
+}
+
+export function getAutoProductionPlan() {
+  // Find products below safety stock (e.g., 10) that have a linked formula
+  const targetStock = 50;
+  const threshold = 10;
+
+  const lowProducts = db.prepare(`
+    SELECT p.id as product_id, p.name as product_name, p.stock, p.formula_id, f.name as formula_name
+    FROM products p
+    JOIN formulas f ON p.formula_id = f.id
+    WHERE p.stock < ?
+  `).all(threshold);
+
+  return lowProducts.map(p => ({
+    product_id: p.product_id,
+    product_name: p.product_name,
+    formula_id: p.formula_id,
+    formula_name: p.formula_name,
+    current_stock: p.stock,
+    quantity_planned: Math.max(targetStock - p.stock, 0)
+  }));
 }
 
 export { db };
