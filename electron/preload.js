@@ -8,11 +8,13 @@ contextBridge.exposeInMainWorld('api', {
   getTopProducts: () => ipcRenderer.invoke('db:get-top-products'),
   getSalesByCategory: () => ipcRenderer.invoke('db:get-sales-by-category'),
   getSalesByHour: () => ipcRenderer.invoke('db:get-sales-by-hour'),
+  getSmartInsights: () => ipcRenderer.invoke('db:get-smart-insights'),
 
   // Products
   getProducts: () => ipcRenderer.invoke('db:get-products'),
   addProduct: (data) => ipcRenderer.invoke('db:add-product', data),
   updateProduct: (data) => ipcRenderer.invoke('db:update-product', data),
+  adjustStock: (data) => ipcRenderer.invoke('db:adjust-stock', data),
   deleteProduct: (id) => ipcRenderer.invoke('db:delete-product', id),
   importProductsFromCSV: () => ipcRenderer.invoke('db:import-products-csv'),
 
@@ -71,6 +73,7 @@ contextBridge.exposeInMainWorld('api', {
   getProductionOrders: () => ipcRenderer.invoke('db:get-production-orders'),
   createProductionOrder: (data) => ipcRenderer.invoke('db:create-production-order', data),
   completeProductionOrder: (id) => ipcRenderer.invoke('db:complete-production-order', id),
+  getAutoProductionPlan: () => ipcRenderer.invoke('db:get-auto-production-plan'),
 
   // --- Finance ---
   getExpenses: () => ipcRenderer.invoke('db:get-expenses'),

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Search, Trophy, Mail, Phone, User, Trash2, History, X, DollarSign } from 'lucide-react';
+import { UserPlus, Search, Trophy, Mail, Phone, User, Trash2, History, X, DollarSign, Crown } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 export default function Customers() {
@@ -74,6 +74,13 @@ export default function Customers() {
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     (c.phone && c.phone.includes(search))
   );
+
+  const getTier = (points) => {
+    const pts = points || 0;
+    if (pts > 1000) return { name: 'Gold', color: 'text-yellow-400 border-yellow-500/50 bg-yellow-900/20' };
+    if (pts > 500) return { name: 'Silver', color: 'text-slate-300 border-slate-500/50 bg-slate-900/20' };
+    return { name: 'Bronze', color: 'text-orange-400 border-orange-500/50 bg-orange-900/20' };
+  };
 
   return (
     <div className="h-full flex gap-6 p-8 overflow-hidden bg-[var(--color-bg-app)] text-zinc-100 relative font-sans">
@@ -188,7 +195,17 @@ export default function Customers() {
                     {customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-bold text-zinc-200 text-lg">{customer.name}</h3>
+                    <h3 className="font-bold text-zinc-200 text-lg flex items-center gap-2">
+                      {customer.name}
+                      {(() => {
+                        const tier = getTier(customer.points);
+                        return (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border uppercase font-bold tracking-wider flex items-center gap-1 ${tier.color}`}>
+                            <Crown size={10} /> {tier.name}
+                          </span>
+                        );
+                      })()}
+                    </h3>
                     <div className="flex gap-4 text-xs text-zinc-500 mt-1">
                       {customer.phone && <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors"><Phone size={12} /> {customer.phone}</span>}
                       {customer.email && <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors"><Mail size={12} /> {customer.email}</span>}

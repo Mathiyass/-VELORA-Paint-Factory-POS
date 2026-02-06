@@ -20,6 +20,7 @@ import Formulas from './pages/production/Formulas';
 import ProductionOrders from './pages/production/ProductionOrders';
 import Expenses from './pages/finance/Expenses';
 import Employees from './pages/finance/Employees';
+import CommandPalette from './components/CommandPalette';
 
 const AppLayout = () => {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden">
+      <CommandPalette />
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <div className="absolute inset-0 bg-[#09090b] -z-10"></div>

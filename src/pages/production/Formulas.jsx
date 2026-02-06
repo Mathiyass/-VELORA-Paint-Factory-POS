@@ -84,6 +84,14 @@ export default function Formulas() {
         setNewFormula(prev => ({ ...prev, ingredients: updated }));
     };
 
+    const calculateCost = () => {
+        return newFormula.ingredients.reduce((total, ing) => {
+            const chem = chemicals.find(c => c.id === ing.chemical_id);
+            const cost = chem ? (chem.avg_cost || 0) : 0;
+            return total + (ing.quantity_required * cost);
+        }, 0);
+    };
+
     return (
         <div className="h-full flex flex-col p-8 bg-[var(--color-bg-app)] text-zinc-100 overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-8">
@@ -206,9 +214,14 @@ export default function Formulas() {
                     <div className="border-t border-zinc-800 pt-4">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-white">Ingredients</h3>
-                            <button onClick={addIngredient} className="text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
-                                <Plus size={14} /> Add Material
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs font-mono text-emerald-400">
+                                    Est. Cost: LKR {calculateCost().toLocaleString()}
+                                </span>
+                                <button onClick={addIngredient} className="text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                                    <Plus size={14} /> Add Material
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar pr-1">
@@ -221,7 +234,7 @@ export default function Formulas() {
                                             onChange={e => updateIngredient(idx, 'chemical_id', parseInt(e.target.value))}
                                         >
                                             <option value="">Select Chemical...</option>
-                                            {chemicals.map(c => <option key={c.id} value={c.id}>{c.name} ({c.unit})</option>)}
+                                            {chemicals.map(c => <option key={c.id} value={c.id}>{c.name} ({c.unit}) - LKR {c.avg_cost?.toFixed(2)}</option>)}
                                         </select>
                                     </div>
                                     <div className="w-24">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Eye, CheckCircle, XCircle, FileText, Truck, Calendar, DollarSign, ChevronDown } from 'lucide-react';
+import { Plus, Search, Eye, CheckCircle, XCircle, FileText, Truck, Calendar, DollarSign, ChevronDown, Trash2 } from 'lucide-react';
 
 export default function PurchaseOrders() {
     const [orders, setOrders] = useState([]); // This would need a getPurchaseOrders function in db.js - checking if it exists

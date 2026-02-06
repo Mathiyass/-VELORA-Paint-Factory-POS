@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, User, List, X, PauseCircle, PlayCircle, Percent, Award, Split, LayoutGrid, AlertCircle, RefreshCw } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, User, List, X, PauseCircle, PlayCircle, Percent, Award, Split, LayoutGrid, AlertCircle, RefreshCw, Crown } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import Invoice from '../components/Invoice';
 import { playSound } from '../utils/sounds';
@@ -133,6 +133,12 @@ export default function POS() {
   const taxableAmount = Math.max(0, subtotal - discount - pointsDiscount);
   const taxAmount = taxableAmount * (taxRate / 100);
   const total = taxableAmount + taxAmount;
+
+  const getTier = (pts) => {
+    if (pts > 1000) return { name: 'Gold', color: 'text-yellow-400 border-yellow-500/50 bg-yellow-900/20' };
+    if (pts > 500) return { name: 'Silver', color: 'text-slate-300 border-slate-500/50 bg-slate-900/20' };
+    return { name: 'Bronze', color: 'text-orange-400 border-orange-500/50 bg-orange-900/20' };
+  };
 
   // --- Checkout Logic ---
   useEffect(() => {
@@ -404,11 +410,17 @@ export default function POS() {
                   value={customer} onChange={e => setCustomer(e.target.value)}
                 />
                 {customerPoints > 0 && (
-                  <div className="mt-2 flex justify-between items-center bg-emerald-900/10 border border-emerald-500/30 p-2 rounded-lg">
-                    <div className="text-emerald-400 text-sm font-bold flex items-center gap-1"><Award size={16} /> {customerPoints} Points</div>
-                    <button type="button" onClick={() => setUsePoints(!usePoints)} className={`text-xs font-bold px-3 py-1 rounded ${usePoints ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-emerald-400'}`}>
-                      {usePoints ? 'Applied' : 'Redeem'}
-                    </button>
+                  <div className="mt-2 space-y-2">
+                    <div className={`flex items-center gap-2 p-2 rounded-lg border ${getTier(customerPoints).color}`}>
+                      <Crown size={14} />
+                      <span className="text-xs font-bold uppercase tracking-wider">{getTier(customerPoints).name} Member</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-emerald-900/10 border border-emerald-500/30 p-2 rounded-lg">
+                      <div className="text-emerald-400 text-sm font-bold flex items-center gap-1"><Award size={16} /> {customerPoints} Points</div>
+                      <button type="button" onClick={() => setUsePoints(!usePoints)} className={`text-xs font-bold px-3 py-1 rounded ${usePoints ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-emerald-400'}`}>
+                        {usePoints ? 'Applied' : 'Redeem'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
