@@ -1,97 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Save, RefreshCw, ShieldAlert, Database, Server, UploadCloud, Store } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useSettings } from '../hooks/useSettings';
 
 export default function Settings() {
-  const { success, error, info } = useToast();
-  const [isResetting, setIsResetting] = useState(false);
-  const [settings, setSettings] = useState({
-    storeName: 'Velora Paint Factory',
-    address: 'Paint Factory Rd, Industrial Zone',
-    phone: '+94 77 123 4567',
-    email: 'info@velorapaints.com',
-    footerText: 'Thank you for choosing Velora Paints!',
-    taxRate: '0'
-  });
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const data = await window.api.getSettings();
-      if (data && Object.keys(data).length > 0) {
-        setSettings(prev => ({ ...prev, ...data }));
-      }
-    } catch (e) {
-      console.error("Failed to load settings", e);
-    }
-  };
-
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    try {
-      await window.api.updateSettings(settings);
-      success('Store settings updated successfully!');
-    } catch {
-      error('Failed to update settings');
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setSettings(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleBackup = async () => {
-    try {
-      info('Starting backup...');
-      const res = await window.api.backupDatabase();
-      if (res.success) {
-        success(`Backup saved to: ${res.path}`);
-      } else {
-        info('Backup cancelled');
-      }
-    } catch {
-      error('Backup failed');
-    }
-  };
-
-  const handleRestore = async () => {
-    try {
-      if (!confirm("WARNING: This will overwrite your current database. Continue?")) return;
-
-      info('Restoring database...');
-      const res = await window.api.restoreDatabase();
-
-      if (res.success) {
-        success('Database restored successfully! System reloading...');
-      } else {
-        info('Restore cancelled');
-      }
-    } catch (e) {
-      console.error(e);
-      error('Restore failed: ' + e.message);
-    }
-  };
-
-  const handleFactoryReset = async () => {
-    if (confirm("DANGER: This will PERMANENTLY WIPE ALL DATA. Are you absolutely sure?")) {
-      try {
-        setIsResetting(true);
-        const res = await window.api.factoryReset();
-        if (res.success) {
-          success("Factory Reset Complete. System cleaned.");
-          setTimeout(() => window.location.reload(), 2000);
-        }
-      } catch (err) {
-        error("Reset Failed: " + err.message);
-      } finally {
-        setIsResetting(false);
-      }
-    }
-  };
+  const { settings, isResetting, actions } = useSettings();
 
   return (
     <div className="h-full p-10 max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-y-auto custom-scrollbar">
@@ -108,14 +20,14 @@ export default function Settings() {
           <Store size={24} />
           <h2 className="text-xl font-bold">Store Information</h2>
         </div>
-        <form onSubmit={handleSaveSettings} className="space-y-4">
+        <form onSubmit={actions.handleSaveSettings} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-zinc-500 uppercase">Store Name</label>
               <input
                 name="storeName"
                 value={settings.storeName}
-                onChange={handleChange}
+                onChange={actions.handleChange}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-all focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
@@ -127,7 +39,7 @@ export default function Settings() {
                 step="0.01"
                 min="0"
                 value={settings.taxRate}
-                onChange={handleChange}
+                onChange={actions.handleChange}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-all focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
@@ -136,7 +48,7 @@ export default function Settings() {
               <input
                 name="phone"
                 value={settings.phone}
-                onChange={handleChange}
+                onChange={actions.handleChange}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-all focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
@@ -145,7 +57,7 @@ export default function Settings() {
               <input
                 name="address"
                 value={settings.address}
-                onChange={handleChange}
+                onChange={actions.handleChange}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-all focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
@@ -154,7 +66,7 @@ export default function Settings() {
               <input
                 name="email"
                 value={settings.email}
-                onChange={handleChange}
+                onChange={actions.handleChange}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-all focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
@@ -163,7 +75,7 @@ export default function Settings() {
               <input
                 name="footerText"
                 value={settings.footerText}
-                onChange={handleChange}
+                onChange={actions.handleChange}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-all focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
@@ -190,14 +102,14 @@ export default function Settings() {
           </p>
           <div className="space-y-3">
             <button
-              onClick={handleBackup}
+              onClick={actions.handleBackup}
               className="flex items-center gap-2 bg-zinc-800 hover:bg-cyan-600 hover:text-black text-white px-5 py-3 rounded-lg transition-all w-full justify-center font-semibold border border-zinc-700 hover:border-cyan-500"
             >
               <Save size={18} />
               Backup Database
             </button>
             <button
-              onClick={handleRestore}
+              onClick={actions.handleRestore}
               className="flex items-center gap-2 border border-zinc-700 hover:bg-zinc-800 text-zinc-300 hover:text-white px-5 py-3 rounded-lg transition-all w-full justify-center font-semibold"
             >
               <UploadCloud size={18} />
@@ -222,7 +134,7 @@ export default function Settings() {
 
           {!isResetting ? (
             <button
-              onClick={() => setIsResetting(true)}
+              onClick={() => actions.setIsResetting(true)}
               className="flex items-center gap-2 border border-red-900/50 text-red-500 hover:bg-red-950/30 px-5 py-3 rounded-lg transition-all w-full justify-center font-semibold"
             >
               <RefreshCw size={18} />
@@ -231,13 +143,13 @@ export default function Settings() {
           ) : (
             <div className="flex gap-2">
               <button
-                onClick={handleFactoryReset}
+                onClick={actions.handleFactoryReset}
                 className="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]"
               >
                 CONFIRM WIPE
               </button>
               <button
-                onClick={() => setIsResetting(false)}
+                onClick={() => actions.setIsResetting(false)}
                 className="px-4 py-3 text-zinc-400 hover:text-white"
               >
                 Cancel

@@ -262,7 +262,243 @@ export function initDb() {
     db.prepare('INSERT INTO users (name, username, password, salt, role) VALUES (?, ?, ?, ?, ?)')
       .run('Administrator', 'admin', hash, salt, 'admin');
     console.log("Default Admin User Created (admin / admin123)");
+
+    // Seed sample data on first run
+    seedSampleData();
+    console.log("Sample data seeded successfully!");
   }
+}
+
+// --- Sample Data Seeding ---
+export function seedSampleData() {
+  console.log("Seeding VELORA Paint Factory sample data...");
+
+  db.transaction(() => {
+    // --- Suppliers ---
+    const suppliers = [
+      { name: 'ChemSupply Industries', contact: 'John Mendis', email: 'john@chemsupply.lk', address: 'Colombo 10', phone: '0112345678' },
+      { name: 'Lanka Pigments Ltd', contact: 'Priya Perera', email: 'priya@lankapigments.lk', address: 'Gampaha', phone: '0332456789' },
+      { name: 'Global Resins PLC', contact: 'Kumar Silva', email: 'kumar@globalresins.com', address: 'Kelaniya', phone: '0113456789' },
+      { name: 'Premium Solvents Co.', contact: 'Sarah Fernando', email: 'sarah@premiumsolvents.lk', address: 'Negombo', phone: '0312567890' }
+    ];
+    const insertSupplier = db.prepare('INSERT INTO suppliers (name, contact_person, email, address, phone) VALUES (?, ?, ?, ?, ?)');
+    suppliers.forEach(s => insertSupplier.run(s.name, s.contact, s.email, s.address, s.phone));
+
+    // --- Chemicals (Raw Materials) ---
+    const chemicals = [
+      { name: 'Titanium Dioxide (TiO2)', sku: 'CHEM-TI02', unit: 'kg', reorder: 50 },
+      { name: 'Calcium Carbonate', sku: 'CHEM-CC01', unit: 'kg', reorder: 100 },
+      { name: 'Acrylic Resin', sku: 'CHEM-AR01', unit: 'L', reorder: 30 },
+      { name: 'Alkyd Resin', sku: 'CHEM-AK01', unit: 'L', reorder: 30 },
+      { name: 'Cobalt Blue Pigment', sku: 'PIG-CB01', unit: 'kg', reorder: 10 },
+      { name: 'Cadmium Yellow Pigment', sku: 'PIG-CY01', unit: 'kg', reorder: 10 },
+      { name: 'Iron Oxide Red', sku: 'PIG-IR01', unit: 'kg', reorder: 15 },
+      { name: 'Carbon Black', sku: 'PIG-BK01', unit: 'kg', reorder: 10 },
+      { name: 'White Spirit (Solvent)', sku: 'SOL-WS01', unit: 'L', reorder: 50 },
+      { name: 'Water (Deionized)', sku: 'SOL-WA01', unit: 'L', reorder: 200 },
+      { name: 'Thickening Agent', sku: 'ADD-TH01', unit: 'kg', reorder: 20 },
+      { name: 'Anti-Settling Agent', sku: 'ADD-AS01', unit: 'kg', reorder: 10 }
+    ];
+    const insertChem = db.prepare('INSERT INTO chemicals (name, sku, unit, reorder_level, current_stock) VALUES (?, ?, ?, ?, ?)');
+    chemicals.forEach((c, i) => insertChem.run(c.name, c.sku, c.unit, c.reorder, (i + 1) * 25));
+
+    // --- Chemical Batches (Inventory lots) ---
+    const insertBatch = db.prepare(`
+      INSERT INTO chemical_batches 
+      (chemical_id, supplier_id, batch_number, internal_lot_number, quantity_initial, quantity_remaining, cost_per_unit, received_date, expiry_date, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+    `);
+    const today = new Date();
+    for (let chemId = 1; chemId <= 12; chemId++) {
+      const qty = 50 + Math.floor(Math.random() * 100);
+      const cost = 100 + Math.floor(Math.random() * 500);
+      const received = new Date(today.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString();
+      const expiry = new Date(today.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
+      insertBatch.run(chemId, (chemId % 4) + 1, `BATCH-${1000 + chemId}`, `LOT-${Date.now()}-${chemId}`, qty, qty, cost, received, expiry);
+    }
+
+    // Update chemical current_stock from batches
+    db.prepare(`
+      UPDATE chemicals SET current_stock = (
+        SELECT IFNULL(SUM(quantity_remaining), 0) FROM chemical_batches WHERE chemical_id = chemicals.id
+      )
+    `).run();
+
+    // --- Products (Finished Goods) ---
+    const products = [
+      { name: 'VELORA Interior Emulsion - White', sku: 'VEL-INT-W01', cat: 'Interior', sell: 2500, buy: 1200, stock: 50 },
+      { name: 'VELORA Interior Emulsion - Ivory', sku: 'VEL-INT-I01', cat: 'Interior', sell: 2600, buy: 1250, stock: 40 },
+      { name: 'VELORA Interior Emulsion - Sky Blue', sku: 'VEL-INT-B01', cat: 'Interior', sell: 2800, buy: 1400, stock: 30 },
+      { name: 'VELORA Exterior Weather Shield - White', sku: 'VEL-EXT-W01', cat: 'Exterior', sell: 3500, buy: 1800, stock: 35 },
+      { name: 'VELORA Exterior Weather Shield - Cream', sku: 'VEL-EXT-C01', cat: 'Exterior', sell: 3600, buy: 1850, stock: 25 },
+      { name: 'VELORA Premium Wood Finish - Clear', sku: 'VEL-WD-C01', cat: 'Wood', sell: 4000, buy: 2000, stock: 20 },
+      { name: 'VELORA Premium Wood Finish - Walnut', sku: 'VEL-WD-W01', cat: 'Wood', sell: 4200, buy: 2100, stock: 18 },
+      { name: 'VELORA Metal Primer - Grey', sku: 'VEL-PM-G01', cat: 'Primer', sell: 2000, buy: 900, stock: 45 },
+      { name: 'VELORA Wood Primer - White', sku: 'VEL-PM-W01', cat: 'Primer', sell: 1800, buy: 800, stock: 40 },
+      { name: 'VELORA Enamel Gloss - Red', sku: 'VEL-EN-R01', cat: 'Enamel', sell: 3200, buy: 1600, stock: 22 },
+      { name: 'VELORA Enamel Gloss - Black', sku: 'VEL-EN-B01', cat: 'Enamel', sell: 3200, buy: 1600, stock: 28 },
+      { name: 'VELORA Enamel Gloss - White', sku: 'VEL-EN-W01', cat: 'Enamel', sell: 3000, buy: 1500, stock: 35 },
+      { name: 'VELORA Waterproofing Coat', sku: 'VEL-WP-01', cat: 'Specialty', sell: 5000, buy: 2500, stock: 15 },
+      { name: 'VELORA Roof Cool Coat', sku: 'VEL-RC-01', cat: 'Specialty', sell: 4500, buy: 2200, stock: 12 },
+      { name: 'Paint Thinner 1L', sku: 'ACC-TH-1L', cat: 'Accessories', sell: 350, buy: 150, stock: 100 }
+    ];
+    const insertProd = db.prepare(`
+      INSERT INTO products (name, sku, category, price_sell, price_buy, stock, warranty)
+      VALUES (?, ?, ?, ?, ?, ?, '1 Year')
+    `);
+    products.forEach(p => insertProd.run(p.name, p.sku, p.cat, p.sell, p.buy, p.stock));
+
+    // --- Formulas (Recipes) ---
+    const formulas = [
+      { name: 'Interior Emulsion White Formula', desc: 'Standard white interior paint recipe', product_id: 1, yield: 20 },
+      { name: 'Exterior Weather Shield Formula', desc: 'Weather resistant exterior paint', product_id: 4, yield: 20 },
+      { name: 'Wood Finish Clear Formula', desc: 'Clear wood varnish formula', product_id: 6, yield: 10 },
+      { name: 'Metal Primer Formula', desc: 'Anti-rust metal primer base', product_id: 8, yield: 15 },
+      { name: 'Enamel Gloss Base', desc: 'High gloss enamel paint base', product_id: 12, yield: 15 }
+    ];
+    const insertFormula = db.prepare('INSERT INTO formulas (name, description, product_id, standard_yield) VALUES (?, ?, ?, ?)');
+    formulas.forEach(f => insertFormula.run(f.name, f.desc, f.product_id, f.yield));
+
+    // --- Formula Ingredients ---
+    const ingredients = [
+      // Interior Emulsion White (formula 1)
+      { formula: 1, chem: 1, qty: 5 },   // TiO2
+      { formula: 1, chem: 2, qty: 8 },   // Calcium Carbonate
+      { formula: 1, chem: 3, qty: 4 },   // Acrylic Resin
+      { formula: 1, chem: 10, qty: 10 }, // Water
+      { formula: 1, chem: 11, qty: 0.5 }, // Thickener
+      // Exterior Weather Shield (formula 2)
+      { formula: 2, chem: 1, qty: 6 },
+      { formula: 2, chem: 3, qty: 6 },
+      { formula: 2, chem: 10, qty: 8 },
+      { formula: 2, chem: 12, qty: 0.3 },
+      // Wood Finish (formula 3)
+      { formula: 3, chem: 4, qty: 5 },   // Alkyd Resin
+      { formula: 3, chem: 9, qty: 4 },   // White Spirit
+      // Metal Primer (formula 4)
+      { formula: 4, chem: 1, qty: 3 },
+      { formula: 4, chem: 4, qty: 4 },
+      { formula: 4, chem: 9, qty: 5 },
+      // Enamel Base (formula 5)
+      { formula: 5, chem: 1, qty: 4 },
+      { formula: 5, chem: 4, qty: 5 },
+      { formula: 5, chem: 9, qty: 3 }
+    ];
+    const insertIng = db.prepare('INSERT INTO formula_ingredients (formula_id, chemical_id, quantity_required) VALUES (?, ?, ?)');
+    ingredients.forEach(i => insertIng.run(i.formula, i.chem, i.qty));
+
+    // Link products to formulas
+    db.prepare('UPDATE products SET formula_id = 1 WHERE id = 1').run();
+    db.prepare('UPDATE products SET formula_id = 2 WHERE id = 4').run();
+    db.prepare('UPDATE products SET formula_id = 3 WHERE id = 6').run();
+    db.prepare('UPDATE products SET formula_id = 4 WHERE id = 8').run();
+    db.prepare('UPDATE products SET formula_id = 5 WHERE id = 12').run();
+
+    // --- Customers ---
+    const customers = [
+      { name: 'Sunshine Constructions', phone: '0771234567', email: 'info@sunshine.lk', type: 'Corporate', limit: 100000 },
+      { name: 'Perera Hardware Store', phone: '0772345678', email: 'perera.hw@gmail.com', type: 'Distributor', limit: 50000 },
+      { name: 'Modern Painters Ltd', phone: '0773456789', email: 'modern@painters.lk', type: 'Corporate', limit: 75000 },
+      { name: 'Chamara Jayasinghe', phone: '0774567890', email: 'chamara.j@email.com', type: 'Retail', limit: 0 },
+      { name: 'Silva Paint Depot', phone: '0775678901', email: 'silva.depot@gmail.com', type: 'Distributor', limit: 80000 }
+    ];
+    const insertCust = db.prepare('INSERT INTO customers (name, phone, email, type, credit_limit, points) VALUES (?, ?, ?, ?, ?, ?)');
+    customers.forEach((c, i) => insertCust.run(c.name, c.phone, c.email, c.type, c.limit, (i + 1) * 100));
+
+    // --- Sample Transactions (for charts) ---
+    const insertTx = db.prepare(`
+      INSERT INTO transactions (invoice_no, timestamp, customer_id, customer_name, total_amount, net_profit, payment_method, status, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'Completed', 1)
+    `);
+    const insertTxItem = db.prepare(`
+      INSERT INTO transaction_items (transaction_id, product_id, quantity, price_unit, cost_unit, total)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    // Create 30 days of sample transactions
+    for (let day = 0; day < 30; day++) {
+      const txDate = new Date(today.getTime() - day * 24 * 60 * 60 * 1000);
+      const numTx = Math.floor(Math.random() * 5) + 2; // 2-6 transactions per day
+
+      for (let t = 0; t < numTx; t++) {
+        const invoice = `INV-${txDate.getTime()}-${t}`;
+        const custId = (day % 5) + 1;
+        const custName = customers[custId - 1].name;
+
+        // Random products
+        const numItems = Math.floor(Math.random() * 3) + 1;
+        let total = 0;
+        let profit = 0;
+        const items = [];
+
+        for (let i = 0; i < numItems; i++) {
+          const prodId = Math.floor(Math.random() * 15) + 1;
+          const prod = products[prodId - 1];
+          const qty = Math.floor(Math.random() * 5) + 1;
+          const itemTotal = prod.sell * qty;
+          const itemProfit = (prod.sell - prod.buy) * qty;
+          total += itemTotal;
+          profit += itemProfit;
+          items.push({ prodId, qty, price: prod.sell, cost: prod.buy, total: itemTotal });
+        }
+
+        const txTimestamp = new Date(txDate.getTime() + t * 3600000).toISOString();
+        insertTx.run(invoice, txTimestamp, custId, custName, total, profit, '["Cash"]');
+        const txId = db.prepare('SELECT last_insert_rowid() as id').get().id;
+
+        items.forEach(item => {
+          insertTxItem.run(txId, item.prodId, item.qty, item.price, item.cost, item.total);
+        });
+      }
+    }
+
+    // --- Expenses ---
+    const expenses = [
+      { title: 'Factory Rent', amount: 150000, category: 'Rent', desc: 'Monthly factory rent' },
+      { title: 'Electricity Bill', amount: 45000, category: 'Power', desc: 'Factory power bill' },
+      { title: 'Water Bill', amount: 8000, category: 'Utilities', desc: 'Monthly water usage' },
+      { title: 'Machine Maintenance', amount: 25000, category: 'Maintenance', desc: 'Quarterly mixer maintenance' },
+      { title: 'Office Supplies', amount: 5000, category: 'Supplies', desc: 'Stationery and supplies' }
+    ];
+    const insertExp = db.prepare('INSERT INTO expenses (title, amount, category, description, date) VALUES (?, ?, ?, ?, ?)');
+    expenses.forEach((e, i) => {
+      const expDate = new Date(today.getTime() - i * 7 * 24 * 60 * 60 * 1000).toISOString();
+      insertExp.run(e.title, e.amount, e.category, e.desc, expDate);
+    });
+
+    // --- Employees ---
+    const employees = [
+      { name: 'Kamal Perera', role: 'Factory Manager', salary: 85000, phone: '0712345678', email: 'kamal@velora.lk' },
+      { name: 'Nimal Silva', role: 'Production Supervisor', salary: 55000, phone: '0722345678', email: 'nimal@velora.lk' },
+      { name: 'Sunil Rathnayake', role: 'Mixer Operator', salary: 35000, phone: '0732345678', email: 'sunil@velora.lk' },
+      { name: 'Amali Fernando', role: 'Quality Control', salary: 45000, phone: '0742345678', email: 'amali@velora.lk' },
+      { name: 'Dilshan Weerasinghe', role: 'Warehouse Staff', salary: 30000, phone: '0752345678', email: 'dilshan@velora.lk' },
+      { name: 'Kasun Jayawardena', role: 'Sales Executive', salary: 40000, phone: '0762345678', email: 'kasun@velora.lk' }
+    ];
+    const insertEmp = db.prepare('INSERT INTO employees (name, role, salary, phone, email, joined_date) VALUES (?, ?, ?, ?, ?, ?)');
+    employees.forEach((e, i) => {
+      const joinDate = new Date(today.getTime() - (365 + i * 60) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      insertEmp.run(e.name, e.role, e.salary, e.phone, e.email, joinDate);
+    });
+
+    // --- Production Orders (sample completed ones) ---
+    const insertProdOrder = db.prepare(`
+      INSERT INTO production_orders (formula_id, product_id, batch_code, quantity_planned, quantity_produced, status, created_at, completed_at, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+    for (let i = 1; i <= 5; i++) {
+      const formula = formulas[i - 1];
+      const qty = formula.yield * 2;
+      const created = new Date(today.getTime() - (i * 5) * 24 * 60 * 60 * 1000).toISOString();
+      const completed = new Date(today.getTime() - (i * 5 - 1) * 24 * 60 * 60 * 1000).toISOString();
+      insertProdOrder.run(i, formula.product_id, `BATCH-VEL-${1000 + i}`, qty, qty, 'Completed', created, completed);
+    }
+
+    // Add some planned orders
+    insertProdOrder.run(1, 1, `BATCH-VEL-${2001}`, 40, 0, 'Planned', today.toISOString(), null);
+    insertProdOrder.run(2, 4, `BATCH-VEL-${2002}`, 30, 0, 'Planned', today.toISOString(), null);
+
+  })();
 }
 
 // --- Auth ---
@@ -326,7 +562,7 @@ export function getChemicals() {
     ORDER BY c.name ASC
   `).all();
 }
-export function addChemical(c) { return db.prepare('INSERT INTO chemicals (name, sku, unit, reorder_level, current_stock) VALUES (?, ?, ?, ?, 0)').run(c.name, c.sku, c.unit, c.reorder_level); }
+export function addChemical(c) { return db.prepare('INSERT OR IGNORE INTO chemicals (name, sku, unit, reorder_level, current_stock) VALUES (?, ?, ?, ?, 0)').run(c.name, c.sku, c.unit, c.reorder_level); }
 
 // --- Advanced Inventory (Batches) ---
 export function getBatches(chemicalId) {
@@ -446,7 +682,7 @@ export function processSale(data) {
 
       // Record Line Item with Snapshot of Cost
       db.prepare('INSERT INTO transaction_items (transaction_id, product_id, quantity, price_unit, cost_unit, total) VALUES (?,?,?,?,?,?)')
-        .run(txId, item.id, item.quantity, item.price, item.cost, (item.price * item.quantity));
+        .run(txId, item.id, item.quantity, item.price_sell, item.cost, (item.price_sell * item.quantity));
     }
     return { success: true, invoice: inv };
   })();
@@ -540,14 +776,18 @@ export function getProductionOrders() {
 
 export function createProductionOrder(data) {
   const { formula_id, quantity_planned } = data;
+  // Validate formula exists
+  if (!formula_id) throw new Error('Formula ID is required');
+
   // Get product_id from formula
   const formula = db.prepare('SELECT product_id FROM formulas WHERE id = ?').get(formula_id);
+  if (!formula) throw new Error(`Formula with ID ${formula_id} does not exist`);
 
   const created_at = new Date().toISOString();
   return db.prepare(`
     INSERT INTO production_orders (formula_id, product_id, quantity_planned, status, created_at)
     VALUES (?, ?, ?, 'Planned', ?)
-  `).run(formula_id, formula?.product_id, quantity_planned, created_at);
+  `).run(formula_id, formula.product_id, quantity_planned, created_at);
 }
 
 export function completeProductionOrder(orderId) {
@@ -711,21 +951,34 @@ export function updateSettings(settings) {
 export function getTransactions() {
   return db.prepare('SELECT * FROM transactions ORDER BY timestamp DESC').all().map(t => {
     const items = db.prepare('SELECT ti.*, p.name FROM transaction_items ti JOIN products p ON ti.product_id = p.id WHERE transaction_id = ?').all(t.id);
-    return { ...t, items };
+
+    // Map DB field names to UI-expected names
+    return {
+      ...t,
+      total: t.total_amount,           // UI expects 'total'
+      profit: t.net_profit,            // UI expects 'profit'
+      items: items.map(item => ({
+        ...item,
+        price_sell: item.price_unit    // UI expects 'price_sell'
+      }))
+    };
   });
 }
 
 // --- System & Maintenance ---
 export function factoryReset() {
   // Drop all tables and re-init
-  const tables = ['users', 'settings', 'audit_logs', 'customers', 'suppliers', 'chemicals', 'chemical_batches', 'purchase_orders', 'purchase_order_items', 'formulas', 'formula_ingredients', 'products', 'production_orders', 'production_consumptions', 'transactions', 'transaction_items', 'held_carts', 'expenses', 'employees'];
+  const tables = ['users', 'settings', 'audit_logs', 'backup_history', 'customers', 'suppliers', 'chemicals', 'chemical_batches', 'purchase_orders', 'purchase_order_items', 'formulas', 'formula_ingredients', 'products', 'production_orders', 'production_consumptions', 'transactions', 'transaction_items', 'held_carts', 'expenses', 'employees'];
   db.transaction(() => {
     for (const t of tables) {
       db.prepare(`DROP TABLE IF EXISTS ${t}`).run();
     }
   })();
   initDb();
-  return { success: true };
+  // Seed sample data after reset
+  seedSampleData();
+  console.log("Factory reset complete with sample data!");
+  return { success: true, message: 'Database reset with sample data' };
 }
 
 export function backupDatabase(destDir) {
@@ -807,8 +1060,8 @@ export function updateSupplier(s) {
 }
 
 export function updateChemical(c) {
-  return db.prepare('UPDATE chemicals SET name=?, sku=?, unit=?, reorder_level=? WHERE id=?')
-    .run(c.name, c.sku, c.unit, c.reorder_level, c.id);
+  return db.prepare('UPDATE chemicals SET name=?, sku=?, unit=?, reorder_level=?, current_stock=? WHERE id=?')
+    .run(c.name, c.sku, c.unit, c.reorder_level, c.current_stock || 0, c.id);
 }
 
 export function deleteChemical(id) {

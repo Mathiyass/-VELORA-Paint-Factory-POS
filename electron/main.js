@@ -24,8 +24,8 @@ function createWindow() {
         contextIsolation: true,
         sandbox: false
       },
-      title: "GamersEdge POS",
-      backgroundColor: '#0f172a',
+      title: "VELORA Paint Factory",
+      backgroundColor: '#050505',
       show: false,
       frame: true
     });
@@ -44,8 +44,8 @@ function createWindow() {
         contextIsolation: true,
         sandbox: false
       },
-      title: "GamersEdge POS",
-      backgroundColor: '#0f172a',
+      title: "VELORA Paint Factory",
+      backgroundColor: '#050505',
       show: false,
       frame: true,
       autoHideMenuBar: true

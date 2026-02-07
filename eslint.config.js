@@ -1,3 +1,4 @@
+
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -41,7 +42,7 @@ export default [
       }
     },
     rules: {
-        'no-unused-vars': 'off' 
+      'no-unused-vars': 'off'
     }
   }
 ]

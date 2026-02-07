@@ -51,7 +51,7 @@ export default function Login() {
             <Factory className="text-black w-8 h-8" />
           </motion.div>
           <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Welcome Back</h1>
-          <p className="text-[var(--color-text-secondary)]">Sign in to VELORA NEON POS</p>
+          <p className="text-[var(--color-text-secondary)]">Sign in to VELORA Paint Factory</p>
         </div>
 
         <Card className="border-zinc-800/80 bg-zinc-900/60 backdrop-blur-xl shadow-2xl">

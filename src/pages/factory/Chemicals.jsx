@@ -7,7 +7,7 @@ export default function Chemicals() {
     const [selectedChemical, setSelectedChemical] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showBatchModal, setShowBatchModal] = useState(false);
-    const [formData, setFormData] = useState({ name: '', sku: '', unit: 'kg', reorder_level: 10 });
+    const [formData, setFormData] = useState({ name: '', sku: '', unit: 'kg', reorder_level: 10, current_stock: 0 });
     const [searchTerm, setSearchTerm] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
@@ -41,7 +41,7 @@ export default function Chemicals() {
                 await window.api.addChemical(formData);
             }
             setShowAddModal(false);
-            setFormData({ name: '', sku: '', unit: 'kg', reorder_level: 10 });
+            setFormData({ name: '', sku: '', unit: 'kg', reorder_level: 10, current_stock: 0 });
             setEditMode(false);
             setEditId(null);
             fetchChemicals();
@@ -53,7 +53,8 @@ export default function Chemicals() {
             name: chem.name,
             sku: chem.sku,
             unit: chem.unit,
-            reorder_level: chem.reorder_level
+            reorder_level: chem.reorder_level,
+            current_stock: chem.current_stock || 0
         });
         setEditId(chem.id);
         setEditMode(true);
@@ -94,7 +95,7 @@ export default function Chemicals() {
                     onClick={() => {
                         setEditMode(false);
                         setEditId(null);
-                        setFormData({ name: '', sku: '', unit: 'kg', reorder_level: 10 });
+                        setFormData({ name: '', sku: '', unit: 'kg', reorder_level: 10, current_stock: 0 });
                         setShowAddModal(true);
                     }}
                     className="bg-cyan-600 hover:bg-cyan-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] font-bold"
@@ -142,7 +143,7 @@ export default function Chemicals() {
                                 <div className="bg-zinc-950/50 p-2 rounded-lg border border-zinc-900">
                                     <div className="text-xs text-zinc-500 mb-1">Current Stock</div>
                                     <div className={`text-xl font-bold ${isLowStock ? 'text-red-500' : 'text-emerald-400'}`}>
-                                        {chem.current_stock?.toFixed(2)} <span className="text-sm font-normal text-zinc-600">{chem.unit}</span>
+                                        {(chem.current_stock ?? 0).toFixed(2)} <span className="text-sm font-normal text-zinc-600">{chem.unit}</span>
                                     </div>
                                 </div>
                                 <div className="bg-zinc-950/50 p-2 rounded-lg border border-zinc-900">
@@ -169,7 +170,7 @@ export default function Chemicals() {
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl shadow-cyan-900/20">
                         <div className="p-6 border-b border-zinc-800">
-                                <h2 className="text-xl font-bold text-white">{editMode ? 'Edit Chemical' : 'Add New Chemical'}</h2>
+                            <h2 className="text-xl font-bold text-white">{editMode ? 'Edit Chemical' : 'Add New Chemical'}</h2>
                         </div>
                         <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
                             <div>
@@ -207,14 +208,28 @@ export default function Chemicals() {
                                     </select>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Reorder Level</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
-                                    value={formData.reorder_level}
-                                    onChange={e => setFormData({ ...formData, reorder_level: e.target.value })}
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Reorder Level</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
+                                        value={formData.reorder_level}
+                                        onChange={e => setFormData({ ...formData, reorder_level: e.target.value })}
+                                    />
+                                </div>
+                                {editMode && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-400 mb-1">Current Stock</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
+                                            value={formData.current_stock}
+                                            onChange={e => setFormData({ ...formData, current_stock: e.target.value })}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button
@@ -228,7 +243,7 @@ export default function Chemicals() {
                                     type="submit"
                                     className="bg-cyan-600 hover:bg-cyan-500 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-cyan-900/20"
                                 >
-                                        {editMode ? 'Save Changes' : 'Add Chemical'}
+                                    {editMode ? 'Save Changes' : 'Add Chemical'}
                                 </button>
                             </div>
                         </form>
@@ -279,10 +294,10 @@ export default function Chemicals() {
                                             </td>
                                             <td className="p-3 text-sm">{batch.expiry_date ? new Date(batch.expiry_date).toLocaleDateString() : '-'}</td>
                                             <td className="p-3 text-sm">
-                                                LKR {batch.cost_per_unit?.toFixed(2)}
+                                                LKR {(batch.cost_per_unit ?? 0).toFixed(2)}
                                             </td>
                                             <td className="p-3 text-right font-medium text-white">
-                                                {batch.quantity_remaining.toFixed(2)} / {batch.quantity_initial}
+                                                {(batch.quantity_remaining ?? 0).toFixed(2)} / {batch.quantity_initial ?? 0}
                                             </td>
                                             <td className="p-3 text-center">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${batch.quantity_remaining === 0 ? 'bg-zinc-800 text-zinc-500' :
