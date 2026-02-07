@@ -178,6 +178,7 @@ export default function Chemicals() {
                                 <input
                                     type="text"
                                     required
+                                    autoFocus
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -215,7 +216,7 @@ export default function Chemicals() {
                                         type="number"
                                         className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
                                         value={formData.reorder_level}
-                                        onChange={e => setFormData({ ...formData, reorder_level: e.target.value })}
+                                        onChange={e => setFormData({ ...formData, reorder_level: Number(e.target.value) })}
                                     />
                                 </div>
                                 {editMode && (
@@ -226,7 +227,7 @@ export default function Chemicals() {
                                             step="0.01"
                                             className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
                                             value={formData.current_stock}
-                                            onChange={e => setFormData({ ...formData, current_stock: e.target.value })}
+                                            onChange={e => setFormData({ ...formData, current_stock: Number(e.target.value) })}
                                         />
                                     </div>
                                 )}

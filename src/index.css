@@ -2,27 +2,33 @@
 
 @theme {
   /* Cyan & Light Red Neon Palette */
-  --color-zinc-950: #050505; /* Blackest Black */
-  --color-zinc-900: #0a0a0a; /* Deep Surface */
-  --color-zinc-800: #121212; /* Card Surface */
-  --color-zinc-400: #94a3b8; /* Muted Text */
-  
+  --color-zinc-950: #050505;
+  /* Blackest Black */
+  --color-zinc-900: #0a0a0a;
+  /* Deep Surface */
+  --color-zinc-800: #121212;
+  /* Card Surface */
+  --color-zinc-400: #94a3b8;
+  /* Muted Text */
+
   --color-cyan-400: #22d3ee;
-  --color-cyan-500: #00FFDE; /* Main Brand Cyan (Neon) */
+  --color-cyan-500: #00FFDE;
+  /* Main Brand Cyan (Neon) */
   --color-cyan-600: #06b6d4;
-  
+
   --color-red-400: #f87171;
-  --color-red-500: #FF6B6B; /* Secondary Accent (Light Red) */
+  --color-red-500: #FF6B6B;
+  /* Secondary Accent (Light Red) */
   --color-red-600: #ef4444;
 
   /* Semantic Colors */
   --color-bg-app: var(--color-zinc-950);
   --color-bg-card: var(--color-zinc-900);
   --color-bg-surface: var(--color-zinc-800);
-  
+
   --color-text-primary: #ffffff;
   --color-text-secondary: var(--color-zinc-400);
-  
+
   --color-accent: var(--color-cyan-500);
   --color-secondary-accent: var(--color-red-500);
 }
@@ -35,8 +41,20 @@ body {
   color: var(--color-text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow: hidden;
-  user-select: none;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Re-enable selection for inputs and other interactive elements */
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text !important;
+}
+
+button,
+a,
+select {
+  user-select: none;
 }
 
 /* Selection Color */
@@ -50,47 +68,91 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-cyan-500);
 }
 
 /* Utility Animations */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes glow {
-  0% { box-shadow: 0 0 5px var(--color-cyan-500), 0 0 10px var(--color-cyan-500); }
-  50% { box-shadow: 0 0 10px var(--color-cyan-500), 0 0 20px var(--color-cyan-500); }
-  100% { box-shadow: 0 0 5px var(--color-cyan-500), 0 0 10px var(--color-cyan-500); }
+  0% {
+    box-shadow: 0 0 5px var(--color-cyan-500), 0 0 10px var(--color-cyan-500);
+  }
+
+  50% {
+    box-shadow: 0 0 10px var(--color-cyan-500), 0 0 20px var(--color-cyan-500);
+  }
+
+  100% {
+    box-shadow: 0 0 5px var(--color-cyan-500), 0 0 10px var(--color-cyan-500);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(34, 211, 238, 0.3); }
-  50% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.6), 0 0 25px rgba(34, 211, 238, 0.3); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(34, 211, 238, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.6), 0 0 25px rgba(34, 211, 238, 0.3);
+  }
 }
 
 @keyframes slide-in-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .animate-fade-in {
@@ -218,28 +280,44 @@ body {
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(34, 211, 238, 0.3);
   border-radius: 2px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 211, 238, 0.5);
 }
 
 /* Print Styles */
 @media print {
-  body * { visibility: hidden; }
-  #invoice-content, #invoice-content *, #repair-ticket-content, #repair-ticket-content * {
+  body * {
+    visibility: hidden;
+  }
+
+  #invoice-content,
+  #invoice-content *,
+  #repair-ticket-content,
+  #repair-ticket-content * {
     visibility: visible;
   }
-  #invoice-content, #repair-ticket-content {
+
+  #invoice-content,
+  #repair-ticket-content {
     position: fixed;
-    left: 0; top: 0; width: 100%; height: 100%;
-    margin: 0; padding: 20px;
-    background: white !important; color: black !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 20px;
+    background: white !important;
+    color: black !important;
     print-color-adjust: exact;
   }
 }

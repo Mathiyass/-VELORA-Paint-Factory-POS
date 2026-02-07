@@ -60,6 +60,10 @@ lerna-debug.log*
 *.temp
 *.bak
 *_output.txt
+build_log*.txt
+
+# Releases
+release-v1/
 
 # Test coverage
 coverage/

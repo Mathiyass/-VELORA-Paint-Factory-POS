@@ -148,6 +148,7 @@ export default function Suppliers() {
                                 <input
                                     type="text"
                                     required
+                                    autoFocus
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-cyan-600 transition-colors"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}

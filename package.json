@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "main": "electron/main.js",
   "description": "Velora Paint Factory & Shop POS Management System",
+  "author": "Velora",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -41,6 +42,7 @@
     "cross-env": "^10.1.0",
     "electron": "^40.1.0",
     "electron-builder": "^26.7.0",
+    "electron-packager": "^17.1.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -55,15 +57,15 @@
   "build": {
     "appId": "com.velora.paintfactory",
     "productName": "Velora Paint Factory",
+    "win": {
+      "target": "nsis"
+    },
     "files": [
       "dist/**/*",
       "electron/**/*"
     ],
     "directories": {
       "output": "release"
-    },
-    "win": {
-      "target": "nsis"
     }
   }
 }

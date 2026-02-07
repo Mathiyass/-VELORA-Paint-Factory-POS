@@ -36,14 +36,15 @@ export default function FormulaModal({ isOpen, onClose, onCreate, chemicals, pro
     const addIngredient = () => {
         setNewFormula(prev => ({
             ...prev,
-            ingredients: [...prev.ingredients, { chemical_id: '', quantity_required: 0 }]
+            ingredients: [...prev.ingredients, { id: Date.now() + Math.random(), chemical_id: '', quantity_required: 0 }]
         }));
     };
 
     const updateIngredient = (index, field, value) => {
-        const updated = [...newFormula.ingredients];
-        updated[index][field] = value;
-        setNewFormula(prev => ({ ...prev, ingredients: updated }));
+        setNewFormula(prev => ({
+            ...prev,
+            ingredients: prev.ingredients.map((ing, i) => i === index ? { ...ing, [field]: value } : ing)
+        }));
     };
 
     const removeIngredient = (index) => {
@@ -131,7 +132,7 @@ export default function FormulaModal({ isOpen, onClose, onCreate, chemicals, pro
 
                     <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar pr-1">
                         {newFormula.ingredients.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-start bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
+                            <div key={item.id || idx} className="flex gap-2 items-start bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
                                 <div className="flex-1">
                                     <select
                                         className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-sm text-white focus:border-cyan-500 outline-none"
@@ -150,7 +151,7 @@ export default function FormulaModal({ isOpen, onClose, onCreate, chemicals, pro
                                         onChange={e => updateIngredient(idx, 'quantity_required', parseFloat(e.target.value))}
                                     />
                                 </div>
-                                <button onClick={() => removeIngredient(idx)} className="p-2 text-zinc-500 hover:text-red-400">
+                                <button type="button" onClick={() => removeIngredient(idx)} className="p-2 text-zinc-500 hover:text-red-400">
                                     <X size={16} />
                                 </button>
                             </div>

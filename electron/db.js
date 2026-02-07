@@ -551,7 +551,18 @@ export function getCustomerHistory(id) {
 // --- Factory Inbound (Suppliers & Chemicals) ---
 export function getSuppliers() { return db.prepare('SELECT * FROM suppliers ORDER BY name ASC').all(); }
 export function addSupplier(s) { return db.prepare('INSERT INTO suppliers (name, contact_person, email, address, phone) VALUES (?, ?, ?, ?, ?)').run(s.name, s.contact, s.email, s.address, s.phone); }
-export function deleteSupplier(id) { return db.prepare('DELETE FROM suppliers WHERE id=?').run(id); }
+export function deleteSupplier(id) {
+  return db.transaction(() => {
+    // Delete related purchase order items first
+    db.prepare('DELETE FROM purchase_order_items WHERE po_id IN (SELECT id FROM purchase_orders WHERE supplier_id = ?)').run(id);
+    // Delete related purchase orders
+    db.prepare('DELETE FROM purchase_orders WHERE supplier_id = ?').run(id);
+    // Unlink chemical batches (set supplier_id to NULL)
+    db.prepare('UPDATE chemical_batches SET supplier_id = NULL WHERE supplier_id = ?').run(id);
+    // Delete the supplier
+    return db.prepare('DELETE FROM suppliers WHERE id = ?').run(id);
+  })();
+}
 
 export function getChemicals() {
   return db.prepare(`
@@ -563,6 +574,16 @@ export function getChemicals() {
   `).all();
 }
 export function addChemical(c) { return db.prepare('INSERT OR IGNORE INTO chemicals (name, sku, unit, reorder_level, current_stock) VALUES (?, ?, ?, ?, 0)').run(c.name, c.sku, c.unit, c.reorder_level); }
+export function updateChemical(c) { return db.prepare('UPDATE chemicals SET name = ?, sku = ?, unit = ?, reorder_level = ?, current_stock = ? WHERE id = ?').run(c.name, c.sku, c.unit, c.reorder_level, c.current_stock, c.id); }
+export function deleteChemical(id) {
+  return db.transaction(() => {
+    // Delete relatedrecords first to avoid FK constraint errors
+    db.prepare('DELETE FROM formula_ingredients WHERE chemical_id = ?').run(id);
+    db.prepare('DELETE FROM chemical_batches WHERE chemical_id = ?').run(id);
+    db.prepare('DELETE FROM purchase_order_items WHERE chemical_id = ?').run(id);
+    return db.prepare('DELETE FROM chemicals WHERE id = ?').run(id);
+  })();
+}
 
 // --- Advanced Inventory (Batches) ---
 export function getBatches(chemicalId) {
@@ -587,6 +608,9 @@ export function getPurchaseOrders() {
 }
 
 export function createPurchaseOrder(data) {
+  if (!data.supplier_id) throw new Error('Supplier ID is required');
+  if (!data.items || data.items.length === 0) throw new Error('Purchase order must have at least one item');
+
   return db.transaction(() => {
     const total = data.items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
     const res = db.prepare('INSERT INTO purchase_orders (supplier_id, total_cost) VALUES (?, ?)').run(data.supplier_id, total);
@@ -594,6 +618,7 @@ export function createPurchaseOrder(data) {
     const insertItem = db.prepare('INSERT INTO purchase_order_items (po_id, chemical_id, quantity_ordered, cost_quoted) VALUES (?, ?, ?, ?)');
 
     for (const item of data.items) {
+      if (!item.chemical_id) throw new Error('All items must have a chemical selected');
       insertItem.run(poId, item.chemical_id, item.quantity, item.cost);
     }
     return poId;
@@ -758,7 +783,13 @@ export function createFormula(data) {
 
 export function deleteFormula(id) {
   return db.transaction(() => {
+    // Unlink products that reference this formula
+    db.prepare('UPDATE products SET formula_id = NULL WHERE formula_id = ?').run(id);
+    // Delete production orders that reference this formula
+    db.prepare('DELETE FROM production_orders WHERE formula_id = ?').run(id);
+    // Delete formula ingredients
     db.prepare('DELETE FROM formula_ingredients WHERE formula_id = ?').run(id);
+    // Delete the formula itself
     db.prepare('DELETE FROM formulas WHERE id = ?').run(id);
   })();
 }
@@ -1023,7 +1054,16 @@ export async function restoreDatabase(srcPath) {
 // --- Missing Functions Implementation ---
 
 export function deleteProduct(id) {
-  return db.prepare('DELETE FROM products WHERE id = ?').run(id);
+  return db.transaction(() => {
+    // Delete related transaction items first
+    db.prepare('DELETE FROM transaction_items WHERE product_id = ?').run(id);
+    // Delete related production orders
+    db.prepare('DELETE FROM production_orders WHERE product_id = ?').run(id);
+    // Unlink from formulas (set product_id to NULL in formulas table)
+    db.prepare('UPDATE formulas SET product_id = NULL WHERE product_id = ?').run(id);
+    // Delete the product itself
+    return db.prepare('DELETE FROM products WHERE id = ?').run(id);
+  })();
 }
 
 export function updateTransaction(data) {
@@ -1059,14 +1099,7 @@ export function updateSupplier(s) {
     .run(s.name, s.contact, s.email, s.address, s.phone, s.id);
 }
 
-export function updateChemical(c) {
-  return db.prepare('UPDATE chemicals SET name=?, sku=?, unit=?, reorder_level=?, current_stock=? WHERE id=?')
-    .run(c.name, c.sku, c.unit, c.reorder_level, c.current_stock || 0, c.id);
-}
 
-export function deleteChemical(id) {
-  return db.prepare('DELETE FROM chemicals WHERE id = ?').run(id);
-}
 
 export function importProductsFromCSV(filePath) {
   // Placeholder for CSV import logic

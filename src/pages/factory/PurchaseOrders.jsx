@@ -36,13 +36,17 @@ export default function PurchaseOrders() {
     }, []);
 
     const handleAddItem = () => {
-        setNewOrder({ ...newOrder, items: [...newOrder.items, { chemical_id: '', quantity: 1, cost: 0 }] });
+        setNewOrder({
+            ...newOrder,
+            items: [...newOrder.items, { id: Date.now() + Math.random(), chemical_id: '', quantity: 1, cost: 0 }]
+        });
     };
 
     const updateItem = (index, field, value) => {
-        const newItems = [...newOrder.items];
-        newItems[index][field] = value;
-        setNewOrder({ ...newOrder, items: newItems });
+        setNewOrder(prev => ({
+            ...prev,
+            items: prev.items.map((item, i) => i === index ? { ...item, [field]: value } : item)
+        }));
     };
 
     const calculateTotal = () => {
@@ -52,15 +56,19 @@ export default function PurchaseOrders() {
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
         if (window.api) {
-            // window.api.createPurchaseOrder doesn't seem to exist in the db.js I saw earlier? 
-            // I saw createProductionOrder. 
-            // I probably need to ADD createPurchaseOrder to db.js too.
-            // For now, let's assume I will add it.
-            await window.api.createPurchaseOrder(newOrder);
+            // Ensure supplier_id is an integer
+            const dataToSubmit = {
+                ...newOrder,
+                supplier_id: parseInt(newOrder.supplier_id)
+            };
+            await window.api.createPurchaseOrder(dataToSubmit);
             setShowCreateModal(false);
+            setNewOrder({ supplier_id: '', items: [] });
             fetchOrders();
         }
     };
+
+    const isFormValid = newOrder.supplier_id && newOrder.items.length > 0 && newOrder.items.every(i => i.chemical_id && i.quantity > 0 && i.cost >= 0);
 
     const initReceive = (order) => {
         setSelectedOrder(order);
@@ -197,7 +205,7 @@ export default function PurchaseOrders() {
                                     <button onClick={handleAddItem} className="text-cyan-500 text-sm hover:text-cyan-400 font-medium">+ Add Item</button>
                                 </div>
                                 {newOrder.items.map((item, idx) => (
-                                    <div key={idx} className="flex gap-4 items-end bg-zinc-950/50 p-3 rounded-xl border border-zinc-900">
+                                    <div key={item.id || idx} className="flex gap-4 items-end bg-zinc-950/50 p-3 rounded-xl border border-zinc-900">
                                         <div className="flex-1">
                                             <label className="text-xs text-zinc-500 block mb-1">Chemical</label>
                                             <select
@@ -227,10 +235,16 @@ export default function PurchaseOrders() {
                                                 onChange={e => updateItem(idx, 'cost', parseFloat(e.target.value))}
                                             />
                                         </div>
-                                        <button onClick={() => {
-                                            const newItems = newOrder.items.filter((_, i) => i !== idx);
-                                            setNewOrder({ ...newOrder, items: newItems });
-                                        }} className="text-zinc-600 hover:text-red-500 p-2"><Trash2 size={16} /></button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newItems = newOrder.items.filter((_, i) => i !== idx);
+                                                setNewOrder({ ...newOrder, items: newItems });
+                                            }}
+                                            className="text-zinc-600 hover:text-red-500 p-2"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -242,7 +256,17 @@ export default function PurchaseOrders() {
                             </div>
                             <div className="flex gap-3">
                                 <button onClick={() => setShowCreateModal(false)} className="px-6 py-2 text-zinc-400 hover:text-white transition-colors">Cancel</button>
-                                <button onClick={handleCreateSubmit} className="bg-cyan-600 hover:bg-cyan-500 text-black px-8 py-2 rounded-lg font-bold shadow-lg shadow-cyan-900/20 transition-all">Create Order</button>
+                                <button
+                                    onClick={handleCreateSubmit}
+                                    disabled={!isFormValid}
+                                    title={!isFormValid ? "Please select a supplier and add valid items" : ""}
+                                    className={`px-8 py-2 rounded-lg font-bold shadow-lg transition-all ${isFormValid
+                                        ? "bg-cyan-600 hover:bg-cyan-500 text-black shadow-cyan-900/20"
+                                        : "bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none"
+                                        }`}
+                                >
+                                    Create Order
+                                </button>
                             </div>
                         </div>
                     </div>
