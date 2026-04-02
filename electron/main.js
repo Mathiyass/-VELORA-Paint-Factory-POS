@@ -22,7 +22,7 @@ function createWindow() {
         preload: preloadPath,
         nodeIntegration: false,
         contextIsolation: true,
-        sandbox: false
+        sandbox: true
       },
       title: "VELORA Paint Factory",
       backgroundColor: '#050505',
@@ -42,7 +42,7 @@ function createWindow() {
         preload: preloadPath,
         nodeIntegration: false,
         contextIsolation: true,
-        sandbox: false
+        sandbox: true
       },
       title: "VELORA Paint Factory",
       backgroundColor: '#050505',
