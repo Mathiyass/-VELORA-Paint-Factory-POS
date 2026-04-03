@@ -59,8 +59,6 @@ function createWindow() {
       dialog.showErrorBox('Startup Error', `Could not load application file:\n${indexPath}\n\nError: ${err.message}`);
     });
 
-    // Keep DevTools open in production temporarily to help debug 'black screen' if it persists (likely a JS error in Renderer)
-    mainWindow.webContents.openDevTools();
   }
 }
 
